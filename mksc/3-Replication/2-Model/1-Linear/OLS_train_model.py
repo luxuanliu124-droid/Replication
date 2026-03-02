@@ -8,7 +8,6 @@ import pickle
 import datetime
 import sys
 sys.path.append('..')
-from input_file import input_file
 
 num_state_var = 375
 num_action = 25
@@ -22,7 +21,8 @@ if not os.path.exists(folder):
 
 # plug in data
 # data_modified = pd.read_csv('../../../smalldata/model_input_sample_small_train_log.csv')
-data_modified = pd.read_csv(input_file)
+input_path = 'mksc/3-Replication/5-Data/simulated_data.txt'
+data_modified = pd.read_csv(input_path)
 print('Input data shape:',data_modified.shape)
 print('num_state_var:',num_state_var)
 print('num_action:',num_action)
