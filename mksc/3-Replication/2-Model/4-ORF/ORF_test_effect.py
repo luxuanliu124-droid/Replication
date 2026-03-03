@@ -3,6 +3,9 @@ import pickle
 import numpy as np
 import time
 import os
+import warnings
+# suppress sklearn deprecation warnings repeated many times
+warnings.filterwarnings('ignore', category=FutureWarning)
 # this py file build lookup table according to orf train model
 # Load trained model
 # folder to save saved model
@@ -10,14 +13,27 @@ import os
 import datetime
 
 
-folder = os.path.join('./Benchmark_saved_model')
-saved_orf_model = os.path.join(folder, 'orf_saved.pkl')
+# locate the folder where training script output its model (use same date as previous run)
+saved_folder = '/workspaces/saved_model_260303'
+# model was saved to live_config.model_save_path inside that folder
+from orf_hyperparameter import live_config
+saved_orf_model = os.path.join(saved_folder, os.path.basename(live_config.model_save_path))
+print(f'Loading ORF model from {saved_orf_model}')
 model = pickle.load(open(saved_orf_model, 'rb'))
 
-
-# Load test data
-test_data = pickle.load(open('./orf_buyers_small_test.pickle', 'rb')).values
-test_data = test_data[:1000, 2:2+375]
+# Load test data: use portion of the same simulated dataset
+import pandas as pd
+try:
+    df_test = pd.read_csv('mksc/3-Replication/5-Data/simulated_data.txt')
+except Exception:
+    df_test = pd.read_csv('mksc/3-Replication/5-Data/simulated_data.txt', error_bad_lines=False)
+# mimic earlier processing: take state columns only
+# original script used .values then slice columns 2:2+375
+values = df_test.values
+if values.shape[1] >= 2+live_config.num_state_var:
+    test_data = values[:, 2:2+live_config.num_state_var]
+else:
+    test_data = values[:, :live_config.num_state_var]
 print('test_data', test_data.shape)
 
 
@@ -27,7 +43,9 @@ TE = model.const_marginal_effect(test_data)
 print('TE', TE.shape)
 end = time.time()
 print('Estimation time elasped: ', end-start)
-pickle.dump(TE, open(os.path.join(folder, 'orf_TE.pkl'), 'wb'))
+# save TE in same folder as the loaded model
+temp_folder = saved_folder
+pickle.dump(TE, open(os.path.join(temp_folder, 'orf_TE.pkl'), 'wb'))
 # TE = pickle.load( open('../../live_rl-master_final/Benchmark_saved_model/orf_TE.pkl', 'rb'))
 
 # # Make the action array
@@ -60,4 +78,4 @@ for (state, action) in zip(test_data, action_25_prob):
 	dic[tuple(state)] = action
 print(dic)
 
-pickle.dump(dic, open(os.path.join(folder, 'orf_lookup_table_proba.pkl'), 'wb'))
+pickle.dump(dic, open(os.path.join(temp_folder, 'orf_lookup_table_proba.pkl'), 'wb'))
