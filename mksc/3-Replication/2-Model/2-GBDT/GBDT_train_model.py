@@ -9,9 +9,10 @@ import datetime
 from time import time
 import os
 
-import sys
-sys.path.append('..')
-from input_file import input_file
+# input_file module caused import errors when running from workspace root
+# so we simply hardcode the path here instead of importing.
+input_file = 'mksc/3-Replication/5-Data/simulated_data.txt'  # replaced per user request
+
 
 # # deal with argument parser 
 parser = argparse.ArgumentParser()

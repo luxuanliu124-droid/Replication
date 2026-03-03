@@ -9,25 +9,26 @@ from time import time
 
 
 if __name__ == "__main__":
-    
+    # adapt paths for current workspace
     num_state_var = 375 
     num_action = 25     
 
-    pretrained_model_path = os.path.join('.',live_config.filename_gbdt+'_regression.sav')
+    # location where the training script placed its output models
+    saved_folder = '/workspaces/saved_model_260303/gbdt_50_models'
+    # pick the first action model as example
+    pretrained_model_path = os.path.join(saved_folder, live_config.filename_gbdt + '_model0_.sav')
 
-    print(pretrained_model_path)
+    print(f"Loading model from {pretrained_model_path}")
     model_dict = pickle.load(open(pretrained_model_path, 'rb'))
     model = model_dict['model']
     num_state_var = model_dict['num_state_var']
     num_action = model_dict['num_action']
     print('GBDT Model successfully loaded from {}'.format(pretrained_model_path))
-    print('\n Hyperparameter:{}\n num_state_var:{}\n num_action:{}\n'.format(model_dict['hyperparameter'],
-                                                                               num_state_var,
-                                                                                   num_action))
+    print('\n Hyperparameter:{}\n num_state_var:{}\n num_action:{}\n'.format(
+        model_dict['hyperparameter'], num_state_var, num_action))
 
-   
-    # plug in data
-    data_modified = pd.read_csv('../../model_input_sample_small_test.csv')
+    # plug in data - use the same simulated dataset used for training
+    data_modified = pd.read_csv('mksc/3-Replication/5-Data/simulated_data.txt')
     print('Input test data shape:',data_modified.shape)
     
     states = data_modified.iloc[:, 2:num_state_var+2]
@@ -40,10 +41,9 @@ if __name__ == "__main__":
     print('Rewards name:{}'.format(rewards.columns))
     rewards = rewards.values.ravel()
 
-    X = np.concatenate([states, action], axis=1)
+    # since the saved model was trained with `train_noaction`, it only expects state features
+    X = states
     y = rewards
 
-    print("GBDT test performance R2:",model.score(x,y))
-
-    
-    print('GBDT on performance on test model: \nRsquared:',model.score(X,y))
+    # evaluate on the test set using state-only features
+    print('GBDT on performance on test model: \nRsquared:', model.score(X, y))
