@@ -1,5 +1,8 @@
 # Model import
-from econml.ortho_forest import ContinuousTreatmentOrthoForest, DiscreteTreatmentOrthoForest
+# latest econml versions use DMLOrthoForest / DROrthoForest classes instead of
+# ContinuousTreatmentOrthoForest / DiscreteTreatmentOrthoForest
+from econml.orf._ortho_forest import DMLOrthoForest as ContinuousTreatmentOrthoForest, \
+    DROrthoForest as DiscreteTreatmentOrthoForest
 from sklearn.linear_model import Lasso, LassoCV, LogisticRegression, LogisticRegressionCV
 from econml.utilities import WeightedModelWrapper
 
@@ -16,9 +19,9 @@ import os
 # Parameters import
 from orf_hyperparameter import live_config
 
-import sys
-sys.path.append('..')
-from input_file import input_file
+# avoid importing input_file; directly specify path
+input_file = 'mksc/3-Replication/5-Data/simulated_data.txt'
+
 
 class ORF_model(object):
     def __init__(self, input_data):
@@ -51,9 +54,10 @@ class ORF_model(object):
         est = DiscreteTreatmentOrthoForest(n_trees=live_config.num_trees, 
             max_depth=live_config.max_depth,
             min_leaf_size=live_config.min_leaf_size,
-         model_Y = WeightedModelWrapper(Lasso(alpha=live_config.lambda_reg)))
+            model_Y = WeightedModelWrapper(Lasso(alpha=live_config.lambda_reg)))
 
-        est.fit(Y, T, X)
+        # new econml API expects Y, T positional and X passed as keyword
+        est.fit(Y, T, X=X)
 
         # Save the model
         dill.dump(est, open(live_config.model_save_path, 'wb'))
@@ -79,9 +83,11 @@ if __name__ == "__main__":
     # print(balance_input.shape)
 
     # random sample
+    # sample at most sample_num rows but not more than dataset size
     sample_num = 20000
-    small_input = input_data.sample(n=sample_num, replace=False).values
-    print("Random sample {} from input data.".format(sample_num))
+    actual_sample = min(sample_num, len(input_data))
+    small_input = input_data.sample(n=actual_sample, replace=False).values
+    print(f"Random sample {actual_sample} from input data (requested {sample_num}).")
 
     # make folder to save saved model
     today = datetime.date.today().strftime('%y%m%d')
