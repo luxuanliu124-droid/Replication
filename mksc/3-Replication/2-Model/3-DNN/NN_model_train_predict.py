@@ -37,9 +37,10 @@ from time import time
 import datetime
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
-import sys
-sys.path.append('..')
-from input_file import input_file
+# input_file import can fail depending on working directory,
+# so define path directly here instead of importing.
+input_file = 'mksc/3-Replication/5-Data/simulated_data.txt'  # the dataset used for training
+
 
 class BaselineNNInstance25Models(object):
 
